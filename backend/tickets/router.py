@@ -58,9 +58,9 @@ async def delete_event_by_id(
 @router.put(
     "/{event_id}", status_code=status.HTTP_200_OK, response_model=schema.EventBase
 )
-async def update_event(
+async def update_event_by_id(
     event_id: int,
-    request: schema.EventBase,
+    request: schema.EventUpdate,
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
 ):

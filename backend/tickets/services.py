@@ -2,28 +2,19 @@ from fastapi import HTTPException, status
 from typing import List
 from . import models
 from backend.auth.models import User
-from datetime import datetime
 from sqlalchemy.orm import Session
-from pydantic import HttpUrl
 
 
 async def create_new_event(
     request, database: Session, current_user: User
 ) -> models.Event:
     try:
-        # Check if request.poster is an HttpUrl object and convert to string if so
-        poster_str = (
-            str(request.poster)
-            if isinstance(request.poster, HttpUrl)
-            else request.poster
-        )
-
         # error if the same event has been added by the same user
         existing_event = (
             database.query(models.Event)
             .filter(
-                models.Event.eventID == request.eventID,
-                models.Event.owner_id == current_user.id,
+                models.Event.name == request.name,
+                models.Event.user_id == current_user.id,
             )
             .first()
         )
@@ -34,13 +25,12 @@ async def create_new_event(
             )
 
         new_event = models.Event(
-            title=request.title,
-            eventID=request.eventID,
-            poster=poster_str,  # Use the converted string
-            date=request.date,
+            name=request.name,
+            description=request.description,
+            start_date=request.start_date,
+            start_time=request.start_time,
             location=request.location,
-            owner_id=current_user.id,
-            createdDate=datetime.now(),
+            user_id=current_user.id,
         )
         database.add(new_event)
         database.commit()
@@ -58,7 +48,7 @@ async def get_event_listing(database, current_user) -> List[models.Event]:
     try:
         events = (
             database.query(models.Event)
-            .filter(models.Event.owner_id == current_user)
+            .filter(models.Event.user_id == current_user)
             .all()
         )
         return events
@@ -73,7 +63,7 @@ async def get_event_by_id(event_id, current_user, database):
     try:
         event = (
             database.query(models.Event)
-            .filter_by(id=event_id, owner_id=current_user)
+            .filter_by(id=event_id, user_id=current_user)
             .first()
         )
         if not event:
@@ -86,6 +76,39 @@ async def get_event_by_id(event_id, current_user, database):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while fetching the event: {str(e)}",
         )
+    
+
+async def update_event_by_id(
+    event_id, request, current_user: User, database: Session
+) -> models.Event:
+    try:
+        # check if event belongs to the user
+        event = (
+            database.query(models.Event)
+            .filter_by(id=event_id, user_id=current_user.id)
+            .first()
+        )
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Event Not Found!"
+            )
+
+        # update event details
+        event.name = request.name
+        event.description = request.description
+        event.start_date = request.start_date
+        event.start_time = request.start_time
+        event.location = request.location
+
+        database.commit()
+        database.refresh(event)
+        return event
+    except Exception as e:
+        database.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while updating the event: {str(e)}",
+        )
 
 
 async def delete_event_by_id(event_id, current_user: User, database: Session):
@@ -93,14 +116,14 @@ async def delete_event_by_id(event_id, current_user: User, database: Session):
         # check if event belongs to the user
         event = (
             database.query(models.Event)
-            .filter_by(id=event_id, owner_id=current_user.id)
+            .filter_by(id=event_id, user_id=current_user.id)
             .first()
         )
         if not event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Event Not Found!"
             )
-        database.query(models.Event).filter(models.Event.eventID == event_id).delete()
+        database.query(models.Event).filter(models.Event.id == event_id).delete()
         database.commit()
     except Exception as e:
         database.rollback()

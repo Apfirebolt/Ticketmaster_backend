@@ -4,10 +4,10 @@ import time
 import uvicorn
 
 from backend.auth import router as auth_router
-from backend.movies import router as movies_router
+from backend.tickets import router as tickets_router
 
-app = FastAPI(title="Fast API Movies App",
-    docs_url="/movies-docs",
+app = FastAPI(title="Fast API Ticket Master App",
+    docs_url="/docs",
     version="0.0.1")
 
 origins = ["http://localhost:3000",]
@@ -21,12 +21,11 @@ app.add_middleware(
 )
 
 app.include_router(auth_router.router)
-app.include_router(movies_router.router)
-app.include_router(movies_router.playlist_router)
+app.include_router(tickets_router.router)
 
-@app.get("/")  # Corrected line: added parentheses
+@app.get("/")
 async def root():
-    return {"message": "Welcome to the FastAPI Movies App!"}
+    return {"message": "Welcome to the FastAPI Ticket Master App!"}
 
 
 if __name__ == "__main__":

@@ -13,8 +13,8 @@ class User(Base):
     email = Column(String(255), unique=True)
     role = Column(String(50), nullable=True, default='user')
     password = Column(String(255))
-
-    movies = relationship("Movie", back_populates="owner")
+    
+    # events = relationship("Event", back_populates="user")
 
     def __init__(self, username, email, role, password, *args, **kwargs):
         self.username = username

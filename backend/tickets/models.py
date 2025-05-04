@@ -14,5 +14,4 @@ class Event(Base):
     start_time = Column(DateTime, default=datetime.utcnow)
     start_date = Column(DateTime, default=datetime.utcnow)
     location = Column(String(200), nullable=True)
-
-    user = relationship("User", back_populates="events")
+    user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))

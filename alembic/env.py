@@ -8,7 +8,7 @@ from backend.db import Base
 import os
 
 from backend.auth.models import User
-from backend.movies.models import Movie, Playlist, PlaylistMovie
+from backend.tickets.models import Event
 
 # Import and load environment variables
 from dotenv import load_dotenv
