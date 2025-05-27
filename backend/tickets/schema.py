@@ -12,8 +12,8 @@ class EventBase(BaseModel):
     location: Optional[str]
 
     class Config:
-        orm_mode = True
-        anystr_strip_whitespace = True
+        from_attributes = True
+        str_strip_whitespace = True
 
 
 class EventUpdate(BaseModel):
@@ -24,8 +24,8 @@ class EventUpdate(BaseModel):
     location: Optional[str]
 
     class Config:
-        orm_mode = True
-        anystr_strip_whitespace = True
+        from_attributes = True
+        str_strip_whitespace = True
 
 
 class EventList(BaseModel):
@@ -37,8 +37,8 @@ class EventList(BaseModel):
     location: Optional[str]
 
     class Config:
-        orm_mode = True
-        anystr_strip_whitespace = True
+        from_attributes = True
+        str_strip_whitespace = True
 
 
 class TicketSchema(BaseModel):
@@ -50,8 +50,8 @@ class TicketSchema(BaseModel):
     location: Optional[str]
 
     class Config:
-        orm_mode = True
-        anystr_strip_whitespace = True
+        from_attributes = True
+        str_strip_whitespace = True
 
 
 class UserSchema(BaseModel):
@@ -59,4 +59,4 @@ class UserSchema(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
