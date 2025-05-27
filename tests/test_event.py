@@ -45,6 +45,12 @@ def test_create_event(auth_token):
     created_event_id = data["id"]
 
 
+def test_list_event_unauthenticated():
+    response = client.get("/api/events/")
+    assert response.status_code == 401  # Unauthorized access should return 401
+    assert response.json() == {"detail": "Not authenticated"}  # Check the error message
+
+
 def test_get_event_list(auth_token):
     response = client.get(
         "/api/events/", headers={"Authorization": f"Bearer {auth_token}"}
