@@ -45,3 +45,38 @@ alembic upgrade head
 ```
 pip install 'pydantic[email]'
 ```
+
+## Testing using pytest
+
+```
+pytest --cov
+```
+
+Type in the following command to run the test cases with coverage. Right now the coverage is around 88%. Here's a sample test file for the root app
+
+```Python
+from fastapi.testclient import TestClient
+import sys
+import os
+
+# Get the absolute path to the project's root directory (one level up from the 'tests' folder)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Add the project root to sys.path if it's not already there
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from main import app
+
+
+client = TestClient(app)
+
+
+def test_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to the FastAPI Ticket Master App!"}
+```
+
+Pytest sneak peeks into your code-base and inspects what piece of code you wrote is not covered in your test cases. For instance, if you have a function defined to get_user_by_id and then there is no route or test for it. It would reduce your test case coverage %.
+
