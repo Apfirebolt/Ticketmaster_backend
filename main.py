@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import time
 import uvicorn
 
 from backend.auth import router as auth_router
