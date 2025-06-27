@@ -4,12 +4,12 @@ from pydantic import BaseModel, EmailStr
 
 
 class EventBase(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     name: str
-    description: Optional[str]
-    start_time: Optional[datetime]
-    start_date: Optional[datetime]
-    location: Optional[str]
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -17,11 +17,11 @@ class EventBase(BaseModel):
 
 
 class EventUpdate(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    start_time: Optional[datetime]
-    start_date: Optional[datetime]
-    location: Optional[str]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -29,7 +29,7 @@ class EventUpdate(BaseModel):
 
 
 class EventList(BaseModel):
-    id: Optional[int]
+    id: Optional[int] 
     name: str
     description: Optional[str]
     start_time: datetime
@@ -45,8 +45,8 @@ class TicketSchema(BaseModel):
     id: Optional[int]
     name: str
     description: Optional[str]
-    start_time: datetime
-    start_date: datetime
+    start_time: str
+    start_date: str
     location: Optional[str]
 
     class Config:
