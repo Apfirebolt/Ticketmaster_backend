@@ -4,6 +4,7 @@ import uvicorn
 
 from backend.auth import router as auth_router
 from backend.tickets import router as tickets_router
+from backend.chat import router as chat_router
 
 app = FastAPI(title="Fast API Ticket Master App",
     docs_url="/docs",
@@ -21,6 +22,7 @@ app.add_middleware(
 
 app.include_router(auth_router.router)
 app.include_router(tickets_router.router)
+app.include_router(chat_router.router)
 
 @app.get("/")
 async def root():

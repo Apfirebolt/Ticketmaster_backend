@@ -7,6 +7,11 @@ from alembic import context
 from backend.db import Base
 import os
 
+# Import all models to ensure they are discovered by Alembic
+from backend.auth.models import User
+from backend.tickets.models import Event
+from backend.chat.models import Conversation, Message
+
 
 # Import and load environment variables
 from dotenv import load_dotenv
