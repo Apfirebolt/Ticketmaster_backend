@@ -30,7 +30,7 @@ async def create_user_registration(request: schema.User,
     return new_user
 
 
-@router.get('/', response_model=List[schema.DisplayAccount])
+@router.get('/users', response_model=List[schema.DisplayAccount])
 async def get_all_users(database: Session = Depends(db.get_db)):
     return await services.all_users(database)
 
@@ -48,14 +48,24 @@ def login(request: schema.Login,
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Password")
 
     # Generate a JWT Token
-    user = schema.DisplayAccount.from_orm(user)
-    access_token = create_access_token(data={"sub": user.email, "id": user.id})
-    return {"access_token": access_token, "token_type": "bearer", "user": user}
+    user_data = schema.DisplayAccount(
+        id=user.id,
+        username=user.username,
+        email=user.email
+    )
+    access_token = create_access_token(data={"sub": user_data.email, "id": user_data.id})
+    return {"access_token": access_token, "token_type": "bearer", "user": user_data}
 
 
 @router.get('/profile', response_model=schema.DisplayAccount)
-async def get_profile(database: Session = Depends(db.get_db), current_user: schema.User = Depends(get_current_user)):
-    return await services.get_profile(database, current_user)
+async def get_profile(current_user: schema.DisplayAccount = Depends(get_current_user)):
+    return current_user
+
+
+@router.get('/me', response_model=schema.DisplayAccount)
+async def get_current_user_info(current_user: schema.DisplayAccount = Depends(get_current_user)):
+    """Get current user information"""
+    return current_user
 
 
 

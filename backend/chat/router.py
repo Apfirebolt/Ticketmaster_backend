@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException, Query, WebSocket
 from sqlalchemy.orm import Session
 from typing import List
 
 from backend import db
-from backend.auth.jwt import get_current_user
+from backend.auth.jwt import get_current_user, verify_token_simple
 from backend.auth.schema import DisplayAccount
+from backend.auth.models import User
 from . import schema, services
+from .websocket import websocket_endpoint
 
 router = APIRouter(tags=['Chat'], prefix='/api/chat')
 
@@ -89,3 +91,29 @@ async def mark_message_as_read(
     """Mark a message as read"""
     message = await services.mark_message_as_read(database, message_id, current_user.id)
     return message
+
+
+@router.websocket("/ws/{user_id}")
+async def chat_websocket(
+    websocket: WebSocket, 
+    user_id: int,
+    token: str = Query(...),
+    database: Session = Depends(db.get_db)
+):
+    """WebSocket endpoint for real-time chat"""
+    # Verify token
+    try:
+        token_data = verify_token_simple(token)
+        if not token_data:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+            
+        user = database.query(User).filter(User.email == token_data.email).first()
+        if not user or user.id != user_id:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+            
+        await websocket_endpoint(websocket, user_id)
+        
+    except Exception as e:
+        await websocket.close(code=4001, reason="Authentication failed")
