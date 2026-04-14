@@ -1,22 +1,18 @@
 from fastapi import WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session
-from typing import Dict, Set
+from typing import Any, Dict, Set
 import json
 from datetime import datetime
-from ..auth.jwt import verify_token_simple
-from ..auth.models import User
-from ..db import get_db
 from . import services, schema
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         # Store active connections: {user_id: websocket}
         self.active_connections: Dict[int, WebSocket] = {}
         # Store user presence info: {user_id: {last_seen, status}}
         self.user_presence: Dict[int, dict] = {}
     
-    async def connect(self, websocket: WebSocket, user_id: int):
+    async def connect(self, websocket: WebSocket, user_id: int) -> None:
         await websocket.accept()
         self.active_connections[user_id] = websocket
         
@@ -32,7 +28,7 @@ class ConnectionManager:
         # Broadcast user came online to all other connected users
         await self.broadcast_presence_update(user_id, "online")
     
-    def disconnect(self, user_id: int):
+    def disconnect(self, user_id: int) -> None:
         if user_id in self.active_connections:
             del self.active_connections[user_id]
             
@@ -53,7 +49,7 @@ class ConnectionManager:
         """Get list of currently online user IDs"""
         return set(self.active_connections.keys())
     
-    def get_user_presence(self, user_id: int) -> dict:
+    def get_user_presence(self, user_id: int) -> dict[str, Any]:
         """Get presence info for a specific user"""
         if user_id in self.active_connections:
             return {
@@ -70,7 +66,7 @@ class ConnectionManager:
                 "last_seen": presence_info.get("last_seen")
             }
     
-    async def broadcast_presence_update(self, user_id: int, status: str):
+    async def broadcast_presence_update(self, user_id: int, status: str) -> None:
         """Broadcast presence update to all connected users"""
         presence_update = {
             "type": "presence_update",
@@ -90,7 +86,7 @@ class ConnectionManager:
                     # Connection is likely closed, remove it
                     self.disconnect(connected_user_id)
     
-    async def send_personal_message(self, message: str, user_id: int):
+    async def send_personal_message(self, message: str, user_id: int) -> None:
         if user_id in self.active_connections:
             websocket = self.active_connections[user_id]
             try:
@@ -99,7 +95,7 @@ class ConnectionManager:
                 # Connection is likely closed, remove it
                 self.disconnect(user_id)
     
-    async def send_message_to_conversation(self, message_data: dict, sender_id: int, receiver_id: int):
+    async def send_message_to_conversation(self, message_data: dict[str, Any], sender_id: int, receiver_id: int) -> None:
         # Send to receiver if online
         await self.send_personal_message(json.dumps(message_data), receiver_id)
         
@@ -110,7 +106,7 @@ class ConnectionManager:
         }
         await self.send_personal_message(json.dumps(confirmation), sender_id)
     
-    async def send_online_users_list(self, user_id: int):
+    async def send_online_users_list(self, user_id: int) -> None:
         """Send list of online users to a specific user"""
         online_users = []
         for online_user_id in self.get_online_users():
@@ -130,7 +126,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
+async def websocket_endpoint(websocket: WebSocket, user_id: int) -> None:
     await manager.connect(websocket, user_id)
     
     # Send initial online users list to the newly connected user

@@ -36,25 +36,34 @@ async def get_all_users(database: Session = Depends(db.get_db)):
 
 
 @router.post('/login')
-def login(request: schema.Login,
-          database: Session = Depends(db.get_db)):    
-    user = database.query(User).filter(User.email == request.email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+async def login(request: schema.Login,
+          database: Session = Depends(db.get_db)):
+    try:
+        user = database.query(User).filter(User.email == request.email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if not hashing.verify_password(request.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Password")
+        if not hashing.verify_password(request.password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Password")
 
-    # Generate a JWT Token
-    user_data = schema.DisplayAccount(
-        id=user.id,
-        username=user.username,
-        email=user.email
-    )
-    access_token = create_access_token(data={"sub": user_data.email, "id": user_data.id})
-    return {"access_token": access_token, "token_type": "bearer", "user": user_data}
+        # Generate a JWT Token
+        user_data = schema.DisplayAccount(
+            id=user.id,
+            username=user.username,
+            email=user.email
+        )
+        access_token = create_access_token(data={"sub": user_data.email, "id": user_data.id})
+        return {"access_token": access_token, "token_type": "bearer", "user": user_data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during login"
+        )
 
 
 @router.get('/profile', response_model=schema.DisplayAccount)

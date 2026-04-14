@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from fastapi import HTTPException, status
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime
 
 from . import models, schema
@@ -137,7 +137,7 @@ async def mark_message_as_read(db: Session, message_id: int, user_id: int) -> mo
     return message
 
 
-async def get_conversation_with_participants(db: Session, conversation_id: int, user_id: int):
+async def get_conversation_with_participants(db: Session, conversation_id: int, user_id: int) -> dict[str, Any]:
     """Get conversation details with participant information"""
     conversation = db.query(models.Conversation).filter(
         models.Conversation.id == conversation_id,

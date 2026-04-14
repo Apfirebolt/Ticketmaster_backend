@@ -15,11 +15,11 @@ class User(Base):
     
     # events = relationship("Event", back_populates="user")
 
-    def __init__(self, username, email, role, password, *args, **kwargs):
+    def __init__(self, username, email, role, password, *args, **kwargs) -> None:
         self.username = username
         self.email = email
         self.role = role
         self.password = hashing.get_password_hash(password)
 
-    def check_password(self, password):
+    def check_password(self, password: str) -> bool:
         return hashing.verify_password(self.password, password)
