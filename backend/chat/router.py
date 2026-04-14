@@ -117,34 +117,3 @@ async def chat_websocket(
         
     except Exception as e:
         await websocket.close(code=4001, reason="Authentication failed")
-
-
-@router.get('/presence/online', response_model=List[dict])
-async def get_online_users(current_user: DisplayAccount = Depends(get_current_user)):
-    """Get list of currently online users"""
-    online_users = []
-    for user_id in manager.get_online_users():
-        if user_id != current_user.id:  # Don't include self
-            presence_info = manager.get_user_presence(user_id)
-            online_users.append(presence_info)
-    return online_users
-
-
-@router.get('/presence/{user_id}', response_model=dict)
-async def get_user_presence(
-    user_id: int,
-    current_user: DisplayAccount = Depends(get_current_user)
-):
-    """Get presence information for a specific user"""
-    return manager.get_user_presence(user_id)
-
-
-@router.get('/presence', response_model=dict)
-async def get_presence_stats(current_user: DisplayAccount = Depends(get_current_user)):
-    """Get presence statistics"""
-    online_count = len(manager.get_online_users())
-    return {
-        "online_users_count": online_count,
-        "online_user_ids": list(manager.get_online_users()),
-        "is_current_user_online": current_user.id in manager.get_online_users()
-    }

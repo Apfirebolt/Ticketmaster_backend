@@ -25,8 +25,13 @@ app.include_router(tickets_router.router)
 app.include_router(chat_router.router)
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "Welcome to the FastAPI Ticket Master App!"}
+
+
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    return {"status": "healthy", "message": "Server is running"}
 
 
 if __name__ == "__main__":

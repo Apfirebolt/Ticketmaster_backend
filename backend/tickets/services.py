@@ -59,7 +59,7 @@ async def get_event_listing(database, current_user) -> List[models.Event]:
         )
 
 
-async def get_event_by_id(event_id, current_user, database):
+async def get_event_by_id(event_id, current_user, database) -> models.Event:
     try:
         event = (
             database.query(models.Event)
@@ -111,7 +111,7 @@ async def update_event_by_id(
         )
 
 
-async def delete_event_by_id(event_id, current_user: User, database: Session):
+async def delete_event_by_id(event_id, current_user: User, database: Session) -> None:
     try:
         # check if event belongs to the user
         event = (
