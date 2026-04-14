@@ -21,7 +21,7 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 
-def verify_token(token: str, credentials_exception) -> schema.TokenData:
+def verify_token(token: str, credentials_exception: HTTPException) -> schema.TokenData:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")

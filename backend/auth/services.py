@@ -1,11 +1,12 @@
 from fastapi import HTTPException, status
 from typing import List, Optional
+from sqlalchemy.orm import Session
 
 from . import schema
 from . import models
 
 
-async def new_user_register(request: schema.BaseModel, database) -> models.User:
+async def new_user_register(request: schema.User, database: Session) -> models.User:
     try:
         new_user = models.User(username=request.username, email=request.email,
                                password=request.password,
@@ -22,7 +23,7 @@ async def new_user_register(request: schema.BaseModel, database) -> models.User:
         )
 
 
-async def all_users(database) -> List[models.User]:
+async def all_users(database: Session) -> List[models.User]:
     try:
         users = database.query(models.User).all()
         return users
@@ -33,7 +34,7 @@ async def all_users(database) -> List[models.User]:
         )
 
 
-async def get_user_by_id(user_id, database) -> Optional[models.User]:
+async def get_user_by_id(user_id: int, database: Session) -> Optional[models.User]:
     try:
         user_info = database.query(models.User).get(user_id)
 
@@ -53,7 +54,7 @@ async def get_user_by_id(user_id, database) -> Optional[models.User]:
         )
 
 
-async def get_profile(database, current_user) -> models.User:
+async def get_profile(database: Session, current_user: schema.TokenData) -> models.User:
     try:
         user = database.query(models.User).filter(models.User.email == current_user.email).first()
         return user

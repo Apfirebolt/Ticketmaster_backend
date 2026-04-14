@@ -18,7 +18,7 @@ async def create_new_event(
     request: schema.EventBase,
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> schema.EventBase:
     user = database.query(User).filter(User.email == current_user.email).first()
     result = await services.create_new_event(request, database, user)
     return result
@@ -28,7 +28,7 @@ async def create_new_event(
 async def event_list(
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> List[schema.EventList]:
     result = await services.get_event_listing(database, current_user.id)
     return result
 
@@ -40,7 +40,7 @@ async def get_event_by_id(
     event_id: int,
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> schema.EventBase:
     return await services.get_event_by_id(event_id, current_user.id, database)
 
 
@@ -51,7 +51,7 @@ async def delete_event_by_id(
     event_id: str,
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> None:
     return await services.delete_event_by_id(event_id, current_user, database)
 
 
@@ -63,5 +63,5 @@ async def update_event_by_id(
     request: schema.EventUpdate,
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
-):
+) -> schema.EventBase:
     return await services.update_event_by_id(event_id, request, current_user, database)

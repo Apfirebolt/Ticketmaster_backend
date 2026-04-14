@@ -1,12 +1,13 @@
 from fastapi import HTTPException, status
-from typing import List
+from typing import List, Union
 from . import models
+from . import schema
 from backend.auth.models import User
 from sqlalchemy.orm import Session
 
 
 async def create_new_event(
-    request, database: Session, current_user: User
+    request: schema.EventBase, database: Session, current_user: User
 ) -> models.Event:
     try:
         # error if the same event has been added by the same user
@@ -44,7 +45,7 @@ async def create_new_event(
         )
 
 
-async def get_event_listing(database, current_user) -> List[models.Event]:
+async def get_event_listing(database: Session, current_user: int) -> List[models.Event]:
     try:
         events = (
             database.query(models.Event)
@@ -59,7 +60,7 @@ async def get_event_listing(database, current_user) -> List[models.Event]:
         )
 
 
-async def get_event_by_id(event_id, current_user, database) -> models.Event:
+async def get_event_by_id(event_id: int, current_user: int, database: Session) -> models.Event:
     try:
         event = (
             database.query(models.Event)
@@ -79,7 +80,7 @@ async def get_event_by_id(event_id, current_user, database) -> models.Event:
     
 
 async def update_event_by_id(
-    event_id, request, current_user: User, database: Session
+    event_id: int, request: schema.EventUpdate, current_user: User, database: Session
 ) -> models.Event:
     try:
         # check if event belongs to the user
@@ -111,7 +112,7 @@ async def update_event_by_id(
         )
 
 
-async def delete_event_by_id(event_id, current_user: User, database: Session) -> None:
+async def delete_event_by_id(event_id: Union[int, str], current_user: User, database: Session) -> None:
     try:
         # check if event belongs to the user
         event = (

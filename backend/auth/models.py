@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from typing import Any
 from backend.db import Base
 
 from .import hashing
@@ -15,7 +16,7 @@ class User(Base):
     
     # events = relationship("Event", back_populates="user")
 
-    def __init__(self, username, email, role, password, *args, **kwargs) -> None:
+    def __init__(self, username: str, email: str, role: str, password: str, *args: Any, **kwargs: Any) -> None:
         self.username = username
         self.email = email
         self.role = role
