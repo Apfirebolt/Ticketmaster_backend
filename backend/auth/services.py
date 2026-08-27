@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from typing import List, Optional
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import schema
@@ -25,7 +26,7 @@ async def new_user_register(request: schema.User, database: Session) -> models.U
 
 async def all_users(database: Session) -> List[models.User]:
     try:
-        users = database.query(models.User).all()
+        users = database.execute(select(models.User)).scalars().all()
         return users
     except Exception as e:
         raise HTTPException(
@@ -36,7 +37,9 @@ async def all_users(database: Session) -> List[models.User]:
 
 async def get_user_by_id(user_id: int, database: Session) -> Optional[models.User]:
     try:
-        user_info = database.query(models.User).get(user_id)
+        user_info = database.execute(
+            select(models.User).where(models.User.id == user_id)
+        ).scalar_one_or_none()
 
         if not user_info:
             raise HTTPException(
@@ -56,7 +59,9 @@ async def get_user_by_id(user_id: int, database: Session) -> Optional[models.Use
 
 async def get_profile(database: Session, current_user: schema.TokenData) -> models.User:
     try:
-        user = database.query(models.User).filter(models.User.email == current_user.email).first()
+        user = database.execute(
+            select(models.User).where(models.User.email == current_user.email)
+        ).scalar_one_or_none()
         return user
     except Exception as e:
         raise HTTPException(

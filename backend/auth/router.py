@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import List
 from backend import db
@@ -39,7 +40,9 @@ async def get_all_users(database: Session = Depends(db.get_db)):
 async def login(request: schema.Login,
           database: Session = Depends(db.get_db)):
     try:
-        user = database.query(User).filter(User.email == request.email).first()
+        user = database.execute(
+            select(User).where(User.email == request.email)
+        ).scalar_one_or_none()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

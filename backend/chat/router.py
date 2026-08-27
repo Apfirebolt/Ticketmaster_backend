@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Query, WebSocket
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -108,7 +109,9 @@ async def chat_websocket(
             await websocket.close(code=4001, reason="Authentication failed")
             return
             
-        user = database.query(User).filter(User.email == token_data.email).first()
+        user = database.execute(
+            select(User).where(User.email == token_data.email)
+        ).scalar_one_or_none()
         if not user or user.id != user_id:
             await websocket.close(code=4001, reason="Authentication failed")
             return

@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, status, Response
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from backend.auth.jwt import get_current_user
 from backend.auth.models import User
@@ -19,7 +20,9 @@ async def create_new_event(
     database: Session = Depends(db.get_db),
     current_user: User = Depends(get_current_user),
 ) -> schema.EventBase:
-    user = database.query(User).filter(User.email == current_user.email).first()
+    user = database.execute(
+        select(User).where(User.email == current_user.email)
+    ).scalar_one_or_none()
     result = await services.create_new_event(request, database, user)
     return result
 

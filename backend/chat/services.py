@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
+from sqlalchemy import and_, desc, or_, select
 from fastapi import HTTPException, status
 from typing import Any, List, Optional
 from datetime import datetime
@@ -17,21 +17,27 @@ async def create_conversation(db: Session, participant_1_id: int, participant_2_
         )
     
     # Check if conversation already exists between these two users
-    existing_conversation = db.query(models.Conversation).filter(
-        or_(
-            and_(models.Conversation.participant_1_id == participant_1_id, 
-                 models.Conversation.participant_2_id == participant_2_id),
-            and_(models.Conversation.participant_1_id == participant_2_id, 
-                 models.Conversation.participant_2_id == participant_1_id)
+    existing_conversation = db.execute(
+        select(models.Conversation).where(
+            or_(
+                and_(models.Conversation.participant_1_id == participant_1_id,
+                     models.Conversation.participant_2_id == participant_2_id),
+                and_(models.Conversation.participant_1_id == participant_2_id,
+                     models.Conversation.participant_2_id == participant_1_id),
+            )
         )
-    ).first()
+    ).scalar_one_or_none()
     
     if existing_conversation:
         return existing_conversation
     
     # Verify both users exist
-    user1 = db.query(User).filter(User.id == participant_1_id).first()
-    user2 = db.query(User).filter(User.id == participant_2_id).first()
+    user1 = db.execute(
+        select(User).where(User.id == participant_1_id)
+    ).scalar_one_or_none()
+    user2 = db.execute(
+        select(User).where(User.id == participant_2_id)
+    ).scalar_one_or_none()
     
     if not user1 or not user2:
         raise HTTPException(
@@ -72,12 +78,16 @@ async def send_message(db: Session, message_data: schema.MessageCreate, sender_i
 
 async def get_user_conversations(db: Session, user_id: int) -> List[models.Conversation]:
     """Get all conversations for a user"""
-    conversations = db.query(models.Conversation).filter(
-        or_(
-            models.Conversation.participant_1_id == user_id,
-            models.Conversation.participant_2_id == user_id
+    conversations = db.execute(
+        select(models.Conversation)
+        .where(
+            or_(
+                models.Conversation.participant_1_id == user_id,
+                models.Conversation.participant_2_id == user_id,
+            )
         )
-    ).order_by(desc(models.Conversation.updated_at)).all()
+        .order_by(desc(models.Conversation.updated_at))
+    ).scalars().all()
     
     return conversations
 
@@ -85,13 +95,15 @@ async def get_user_conversations(db: Session, user_id: int) -> List[models.Conve
 async def get_conversation_messages(db: Session, conversation_id: int, user_id: int, limit: int = 50, offset: int = 0) -> List[models.Message]:
     """Get messages for a specific conversation"""
     # Verify user is part of the conversation
-    conversation = db.query(models.Conversation).filter(
-        models.Conversation.id == conversation_id,
-        or_(
-            models.Conversation.participant_1_id == user_id,
-            models.Conversation.participant_2_id == user_id
+    conversation = db.execute(
+        select(models.Conversation).where(
+            models.Conversation.id == conversation_id,
+            or_(
+                models.Conversation.participant_1_id == user_id,
+                models.Conversation.participant_2_id == user_id,
+            ),
         )
-    ).first()
+    ).scalar_one_or_none()
     
     if not conversation:
         raise HTTPException(
@@ -99,16 +111,22 @@ async def get_conversation_messages(db: Session, conversation_id: int, user_id: 
             detail="Conversation not found or access denied"
         )
     
-    messages = db.query(models.Message).filter(
-        models.Message.conversation_id == conversation_id
-    ).order_by(desc(models.Message.created_at)).offset(offset).limit(limit).all()
+    messages = db.execute(
+        select(models.Message)
+        .where(models.Message.conversation_id == conversation_id)
+        .order_by(desc(models.Message.created_at))
+        .offset(offset)
+        .limit(limit)
+    ).scalars().all()
     
     return messages
 
 
 async def mark_message_as_read(db: Session, message_id: int, user_id: int) -> models.Message:
     """Mark a message as read"""
-    message = db.query(models.Message).filter(models.Message.id == message_id).first()
+    message = db.execute(
+        select(models.Message).where(models.Message.id == message_id)
+    ).scalar_one_or_none()
     
     if not message:
         raise HTTPException(
@@ -117,13 +135,15 @@ async def mark_message_as_read(db: Session, message_id: int, user_id: int) -> mo
         )
     
     # Verify user is part of the conversation and not the sender
-    conversation = db.query(models.Conversation).filter(
-        models.Conversation.id == message.conversation_id,
-        or_(
-            models.Conversation.participant_1_id == user_id,
-            models.Conversation.participant_2_id == user_id
+    conversation = db.execute(
+        select(models.Conversation).where(
+            models.Conversation.id == message.conversation_id,
+            or_(
+                models.Conversation.participant_1_id == user_id,
+                models.Conversation.participant_2_id == user_id,
+            ),
         )
-    ).first()
+    ).scalar_one_or_none()
     
     if not conversation or message.sender_id == user_id:
         raise HTTPException(
@@ -139,13 +159,15 @@ async def mark_message_as_read(db: Session, message_id: int, user_id: int) -> mo
 
 async def get_conversation_with_participants(db: Session, conversation_id: int, user_id: int) -> dict[str, Any]:
     """Get conversation details with participant information"""
-    conversation = db.query(models.Conversation).filter(
-        models.Conversation.id == conversation_id,
-        or_(
-            models.Conversation.participant_1_id == user_id,
-            models.Conversation.participant_2_id == user_id
+    conversation = db.execute(
+        select(models.Conversation).where(
+            models.Conversation.id == conversation_id,
+            or_(
+                models.Conversation.participant_1_id == user_id,
+                models.Conversation.participant_2_id == user_id,
+            ),
         )
-    ).first()
+    ).scalar_one_or_none()
     
     if not conversation:
         raise HTTPException(
@@ -154,13 +176,19 @@ async def get_conversation_with_participants(db: Session, conversation_id: int, 
         )
     
     # Get the last message
-    last_message = db.query(models.Message).filter(
-        models.Message.conversation_id == conversation_id
-    ).order_by(desc(models.Message.created_at)).first()
+    last_message = db.execute(
+        select(models.Message)
+        .where(models.Message.conversation_id == conversation_id)
+        .order_by(desc(models.Message.created_at))
+    ).scalar_one_or_none()
     
     # Get participant details
-    participant_1 = db.query(User).filter(User.id == conversation.participant_1_id).first()
-    participant_2 = db.query(User).filter(User.id == conversation.participant_2_id).first()
+    participant_1 = db.execute(
+        select(User).where(User.id == conversation.participant_1_id)
+    ).scalar_one_or_none()
+    participant_2 = db.execute(
+        select(User).where(User.id == conversation.participant_2_id)
+    ).scalar_one_or_none()
     
     return {
         "id": conversation.id,

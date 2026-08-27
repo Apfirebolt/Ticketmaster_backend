@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from typing import List, Union
+from sqlalchemy import delete, select
 from . import models
 from . import schema
 from backend.auth.models import User
@@ -11,14 +12,12 @@ async def create_new_event(
 ) -> models.Event:
     try:
         # error if the same event has been added by the same user
-        existing_event = (
-            database.query(models.Event)
-            .filter(
+        existing_event = database.execute(
+            select(models.Event).where(
                 models.Event.name == request.name,
                 models.Event.user_id == current_user.id,
             )
-            .first()
-        )
+        ).scalar_one_or_none()
         if existing_event:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -47,11 +46,9 @@ async def create_new_event(
 
 async def get_event_listing(database: Session, current_user: int) -> List[models.Event]:
     try:
-        events = (
-            database.query(models.Event)
-            .filter(models.Event.user_id == current_user)
-            .all()
-        )
+        events = database.execute(
+            select(models.Event).where(models.Event.user_id == current_user)
+        ).scalars().all()
         return events
     except Exception as e:
         raise HTTPException(
@@ -62,11 +59,12 @@ async def get_event_listing(database: Session, current_user: int) -> List[models
 
 async def get_event_by_id(event_id: int, current_user: int, database: Session) -> models.Event:
     try:
-        event = (
-            database.query(models.Event)
-            .filter_by(id=event_id, user_id=current_user)
-            .first()
-        )
+        event = database.execute(
+            select(models.Event).where(
+                models.Event.id == event_id,
+                models.Event.user_id == current_user,
+            )
+        ).scalar_one_or_none()
         if not event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Event Not Found!"
@@ -84,11 +82,12 @@ async def update_event_by_id(
 ) -> models.Event:
     try:
         # check if event belongs to the user
-        event = (
-            database.query(models.Event)
-            .filter_by(id=event_id, user_id=current_user.id)
-            .first()
-        )
+        event = database.execute(
+            select(models.Event).where(
+                models.Event.id == event_id,
+                models.Event.user_id == current_user.id,
+            )
+        ).scalar_one_or_none()
         if not event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Event Not Found!"
@@ -115,16 +114,17 @@ async def update_event_by_id(
 async def delete_event_by_id(event_id: Union[int, str], current_user: User, database: Session) -> None:
     try:
         # check if event belongs to the user
-        event = (
-            database.query(models.Event)
-            .filter_by(id=event_id, user_id=current_user.id)
-            .first()
-        )
+        event = database.execute(
+            select(models.Event).where(
+                models.Event.id == event_id,
+                models.Event.user_id == current_user.id,
+            )
+        ).scalar_one_or_none()
         if not event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Event Not Found!"
             )
-        database.query(models.Event).filter(models.Event.id == event_id).delete()
+        database.execute(delete(models.Event).where(models.Event.id == event_id))
         database.commit()
     except Exception as e:
         database.rollback()
